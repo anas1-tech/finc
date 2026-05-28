@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مديري المالي السحابي</title>
+    <style>
+        :root {
+            --bg-main: #F4F6F9; --card-bg: #FFFFFF; --text-main: #1E293B; --text-muted: #64748B;
+            --grad-green: linear-gradient(135deg, #10B981, #059669); --grad-purple: linear-gradient(135deg, #8B5CF6, #6D28D9);
+            --grad-orange: linear-gradient(135deg, #F59E0B, #D97706); --grad-red: linear-gradient(135deg, #EF4444, #B91C1C);
+            --grad-blue: linear-gradient(135deg, #3B82F6, #2563EB); --grad-dark: linear-gradient(135deg, #475569, #1E293B);
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-main); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; padding-top: 45px; display: flex; justify-content: center; }
+        .main-container { width: 100%; max-width: 600px; padding: 20px; position: relative; }
+        
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-main); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .auth-card { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        
+        h1 { font-size: 22px; margin-bottom: 20px; text-align: center; color: var(--text-main); font-weight: 800;}
+        h2 { font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--bg-main); padding-bottom: 10px;}
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05); margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card { color: white; padding: 20px 15px; border-radius: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .stat-card.full-width { grid-column: span 2; }
+        .stat-card h3 { font-size: 13px; margin: 0 0 8px 0; opacity: 0.9; font-weight: 500; }
+        .stat-card .amount { font-size: 26px; font-weight: 800; }
+        .budget-input { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.5); color: white; font-size: 24px; font-weight: 800; width: 120px; text-align: center; border-radius: 8px; padding: 5px; outline: none; }
+        .form-group { display: flex; flex-direction: column; gap: 12px; }
+        input, select { padding: 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 15px; background-color: #F8FAFC; width: 100%;}
+        input:focus, select:focus { border-color: #3B82F6; outline: none; background-color: #FFF;}
+        button.btn-primary { background: var(--text-main); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;}
+        button.btn-primary:active { transform: scale(0.98); }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #F1F5F9; }
+        .list-item:last-child { border-bottom: none; }
+        .item-right { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .item-left { display: flex; align-items: center; gap: 12px; }
+        .item-info { display: flex; flex-direction: column; gap: 4px; }
+        .item-title { font-weight: 600; font-size: 15px; }
+        .item-meta { font-size: 11px; color: var(--text-muted); background: #F1F5F9; padding: 3px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;}
+        .item-amount { font-weight: bold; font-size: 16px; }
+        .btn-edit { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+        .btn-edit:hover { background-color: #E2E8F0; }
+        .checkbox-group { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .checkbox-group input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; margin: 0; pointer-events: none; }
+        .completed-text { text-decoration: line-through; color: var(--text-muted); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #E2E8F0; display: flex; z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: bold; cursor: pointer; background: none; border: none; gap: 5px; transition: 0.2s; }
+        .nav-item.active { color: #3B82F6; }
+        .toggle-mode-btn { position: absolute; top: 10px; right: 20px; background: var(--text-main); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
+        .logout-btn { position: absolute; top: 10px; left: 20px; background: #EF4444; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; z-index: 100; }
+        .edit-element { display: none !important; }
+        body.edit-mode .edit-element { display: flex !important; }
+        body.edit-mode .edit-element-block { display: block !important; }
+        body.edit-mode .checkbox-group input[type="checkbox"] { pointer-events: auto; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+        .modal-box { background: var(--card-bg); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #E2E8F0; color: var(--text-main); border: none; padding: 12px; border-radius: 10px; font-weight: bold; flex: 1; cursor: pointer; }
+        .car-month-selector { display: flex; gap: 10px; align-items: center; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px; padding: 5px;}
+        .car-fixed-text { padding: 5px 10px; font-weight: bold; color: var(--text-muted); white-space: nowrap; border-left: 1px solid #CBD5E1;}
+        .car-month-selector select { border: none; padding: 8px; background: transparent; flex: 1; font-weight: bold;}
+        .settings-card { background: #F8FAFC; border: 1px dashed #CBD5E1; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; }
+        .number-only { direction: ltr; text-align: right; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h1 style="color: var(--grad-blue);">مديري المالي</h1>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">يرجى تسجيل الدخول للوصول لبياناتك</p>
+            <div class="form-group">
+                <input type="text" id="auth-username" placeholder="اسم المستخدم">
+                <input type="password" id="auth-password" placeholder="كلمة المرور">
+                <button class="btn-primary" onclick="login()" style="background: var(--grad-blue);">تسجيل الدخول</button>
+                <button class="btn-primary" onclick="register()" style="background: var(--text-muted); margin-top: -5px;">إنشاء حساب جديد</button>
+            </div>
+            <div id="auth-msg" style="margin-top: 15px; font-size: 13px; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <div id="app-screen" style="display: none; width: 100%;">
+        <button id="modeBtn" class="toggle-mode-btn" onclick="toggleEditMode()">✏️ تفعيل التعديل</button>
+        <button class="logout-btn" onclick="logout()">خروج</button>
+
+        <div id="editModal" class="modal-overlay">
+            <div class="modal-box">
+                <h2 style="border: none; padding: 0; margin-bottom: 15px;">✏️ تعديل البيانات</h2>
+                <div class="form-group">
+                    <label style="font-size: 12px; color: var(--text-muted);">الاسم / الوصف</label>
+                    <input type="text" id="modal-name">
+                    <div id="modal-reason-group" style="display:none; flex-direction:column; gap:5px;">
+                        <label style="font-size: 12px; color: var(--text-muted);">السبب / التأخير</label>
+                        <input type="text" id="modal-reason">
+                    </div>
+                    <div id="modal-month-group" style="display:none; flex-direction:column; gap:5px;">
+                        <label style="font-size: 12px; color: var(--text-muted);">شهر الدفعة</label>
+                        <input type="month" id="modal-dueDate">
+                    </div>
+                    <label style="font-size: 12px; color: var(--text-muted);">المبلغ (﷼)</label>
+                    <input type="text" id="modal-amount" class="number-only">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+                    <button class="btn-primary" onclick="saveModalChanges()" style="flex: 1; background: var(--grad-blue);">حفظ التعديل</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <div id="debts-page" class="page active">
+                <h1>⚖️ الديون والأقساط</h1>
+                <div class="stats-grid">
+                    <div class="stat-card full-width" style="background: var(--grad-green);">
+                        <h3>إجمالي اللي لي 🟢</h3>
+                        <div class="amount" id="total-to-me">0 ﷼</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--grad-orange);">
+                        <h3>أقساط سيارة متبقية🚗</h3>
+                        <div class="amount" id="total-car">0 ﷼</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--grad-purple);">
+                        <h3>ديون أخرى متبقية 🟣</h3>
+                        <div class="amount" id="total-other-debts">0 ﷼</div>
+                    </div>
+                    <div class="stat-card full-width" style="background: var(--grad-red);">
+                        <h3>إجمالي اللي علي (لا يخصم إلا عند الدفع) 🔴</h3>
+                        <div class="amount" id="total-on-me">0 ﷼</div>
+                    </div>
+                </div>
+
+                <div class="card edit-element edit-element-block">
+                    <h2>🚗 توليد خطة أقساط السيارة تلقائياً</h2>
+                    <div class="form-group" style="background: #FFFBEB; padding: 15px; border-radius: 10px; border: 1px solid #FDE68A;">
+                        <input type="text" id="auto-car-total" class="number-only" placeholder="المبلغ المتبقي للسيارة (﷼)">
+                        <input type="text" id="auto-car-monthly" class="number-only" placeholder="قيمة القسط الشهري (﷼)">
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted);">شهر بداية أول قسط:</label>
+                            <input type="month" id="auto-car-start-month">
+                        </div>
+                        <button class="btn-primary" onclick="generateCarPlan()" style="background: var(--grad-orange);">إنشاء الخطة آلياً</button>
+                    </div>
+                </div>
+
+                <div class="card edit-element edit-element-block">
+                    <h2>➕ إضافة دفعة سيارة فردية (يدوي)</h2>
+                    <div class="form-group">
+                        <input type="month" id="car-single-month">
+                        <input type="text" id="car-single-amount" class="number-only" placeholder="المبلغ (﷼)">
+                        <input type="text" id="car-single-reason" placeholder="سبب التأخير (اختياري)">
+                        <button class="btn-primary" onclick="addSingleCarInstallment()" style="background: var(--grad-orange);">إضافة الدفعة</button>
+                    </div>
+                </div>
+
+                <div class="card edit-element edit-element-block">
+                    <h2>➕ إضافة ديون متفرقة</h2>
+                    <div class="form-group">
+                        <select id="debt-type">
+                            <option value="toMe">لي (مبلغ مطلوب لي)</option>
+                            <option value="otherDebts">عليّ (دين مطلوب مني)</option>
+                        </select>
+                        <input type="text" id="debt-name" placeholder="الاسم أو الجهة">
+                        <input type="text" id="debt-reason" placeholder="السبب (اختياري)">
+                        <input type="text" id="debt-amount" class="number-only" placeholder="المبلغ (﷼)">
+                        <button class="btn-primary" onclick="addStandardDebt()" style="background: var(--grad-purple);">حفظ الدين</button>
+                    </div>
+                </div>
+
+                <div class="card"><h2>🟠 أقساط السيارة</h2><div id="car-list"></div></div>
+                <div class="card"><h2>🟣 ديون أخرى</h2><div id="other-debts-list"></div></div>
+                <div class="card"><h2>🟢 اللي لي</h2><div id="to-me-list"></div></div>
+            </div>
+
+            <div id="budget-page" class="page">
+                <h1>📊 الميزانية والمصروفات</h1>
+                <div class="stats-grid">
+                    <div class="stat-card full-width" style="background: var(--grad-blue);">
+                        <h3>الميزانية المحددة للشهر (﷼)</h3>
+                        <input type="text" id="monthly-budget-input" class="budget-input number-only edit-element" onchange="updateSettings()">
+                        <div id="monthly-budget-display" class="amount" style="font-size: 24px; font-weight: bold; padding: 5px;">0</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--grad-red);">
+                        <h3>المصروف + المدفوع (✅)</h3>
+                        <div class="amount" id="total-spent">0 ﷼</div>
+                    </div>
+                    <div class="stat-card" id="remaining-card" style="background: var(--grad-green);">
+                        <h3>الباقي من المصروف</h3>
+                        <div class="amount" id="total-remaining">0 ﷼</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid edit-element edit-element-block" style="gap: 10px;">
+                    <button class="btn-primary" onclick="exportToExcel()" style="background: var(--grad-dark); font-size: 14px;">📥 استخراج تقرير إكسل</button>
+                </div>
+
+                <div class="card edit-element edit-element-block">
+                    <h2>💸 تتبع صرف جديد</h2>
+                    <div class="form-group">
+                        <input type="text" id="expense-name" placeholder="في ايش صرفت؟">
+                        <input type="text" id="expense-amount" class="number-only" placeholder="المبلغ (﷼)">
+                        <button class="btn-primary" onclick="addExpense()" style="background: var(--grad-blue);">سجّل المصروف</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🧾 الفواتير والاشتراكات الثابتة</h2>
+                    <div id="fixed-bills-list"></div>
+                    <button class="btn-primary edit-element edit-element-block" onclick="addFixedBill()" style="background: #64748B; margin-top: 10px;">+ إضافة فاتورة ثابتة</button>
+                </div>
+                <div class="card"><h2>📉 سجل العمليات الأخير</h2><div id="expenses-list"></div></div>
+
+                <div class="settings-card edit-element edit-element-block">
+                    <h4 style="margin: 0 0 10px 0; color: var(--text-muted);">⚙️ إعدادات الراتب</h4>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <label>يوم نزول الراتب لتصفير الميزانية:</label>
+                        <input type="text" id="salary-day-input" class="number-only" style="width: 60px; padding: 5px; text-align: center;" onchange="updateSettings()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchPage('debts', this)"><span class="nav-icon">⚖️</span><span>الديون والأقساط</span></button>
+            <button class="nav-item" onclick="switchPage('budget', this)"><span class="nav-icon">📊</span><span>الميزانية</span></button>
+        </nav>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. نظام المصادقة والاتصال بالخادم
+        // ==========================================
+        async function apiCall(url, data) {
+            const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            return await res.json();
+        }
+
+        async function checkSession() {
+            const res = await fetch('auth.php?action=check');
+            const data = await res.json();
+            if (data.status === 'logged_in') {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'flex';
+                fetchData(); 
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+            }
+        }
+        checkSession();
+
+        async function login() {
+            const u = document.getElementById('auth-username').value; const p = document.getElementById('auth-password').value;
+            const res = await apiCall('auth.php', { action: 'login', username: u, password: p });
+            if(res.status === 'success') { document.getElementById('auth-msg').innerText = ''; checkSession(); }
+            else { document.getElementById('auth-msg').innerText = res.message; document.getElementById('auth-msg').style.color = 'red'; }
+        }
+
+        async function register() {
+            const u = document.getElementById('auth-username').value; const p = document.getElementById('auth-password').value;
+            const res = await apiCall('auth.php', { action: 'register', username: u, password: p });
+            document.getElementById('auth-msg').innerText = res.message;
+            document.getElementById('auth-msg').style.color = (res.status === 'success') ? 'green' : 'red';
+        }
+
+        async function logout() {
+            await apiCall('auth.php', { action: 'logout' });
+            location.reload();
+        }
+
+        // ==========================================
+        // 2. إدارة البيانات
+        // ==========================================
+        let debtsData = { toMe: [], otherDebts: [], car: [] };
+        let billsData = []; let expensesData = [];
+        let monthlyBudget = 5000; let salaryDay = 27;
+
+        async function fetchData() {
+            const res = await fetch('api.php?action=get_data');
+            const data = await res.json();
+            if(data.status === 'success') {
+                debtsData = data.debts; billsData = data.bills; expensesData = data.expenses;
+                if(data.settings) { monthlyBudget = data.settings.monthly_budget; salaryDay = data.settings.salary_day; }
+                
+                document.getElementById('monthly-budget-input').value = monthlyBudget;
+                document.getElementById('monthly-budget-display').textContent = monthlyBudget;
+                document.getElementById('salary-day-input').value = salaryDay;
+                
+                renderAll();
+                checkMonthlyReset();
+            }
+        }
+
+        async function updateSettings() {
+            const b = document.getElementById('monthly-budget-input').value;
+            const s = document.getElementById('salary-day-input').value;
+            document.getElementById('monthly-budget-display').textContent = b;
+            await apiCall('api.php', { action: 'update_settings', budget: b, salary_day: s });
+            fetchData();
+        }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('number-only')) {
+                let val = e.target.value.replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
+                e.target.value = val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); 
+            }
+        });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter' && document.getElementById('editModal').classList.contains('active')) saveModalChanges(); });
+
+        let isEditMode = false;
+        function toggleEditMode() {
+            isEditMode = !isEditMode; document.body.classList.toggle('edit-mode', isEditMode);
+            const btn = document.getElementById('modeBtn');
+            btn.innerHTML = isEditMode ? '👁️ وضع العرض' : '✏️ تفعيل التعديل';
+            btn.style.background = isEditMode ? 'var(--grad-green)' : 'var(--text-main)';
+            document.getElementById('monthly-budget-display').style.display = isEditMode ? 'none' : 'block';
+        }
+        function switchPage(pageId, btnElement) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId + '-page').classList.add('active'); btnElement.classList.add('active');
+        }
+
+        function renderAll() {
+            let totalToMe = 0, totalOther = 0, totalCar = 0;
+            const buildList = (typeKey, containerId) => {
+                const container = document.getElementById(containerId); container.innerHTML = '';
+                debtsData[typeKey].forEach(item => {
+                    if (!item.is_paid) {
+                        if (typeKey === 'toMe') totalToMe += parseFloat(item.amount);
+                        if (typeKey === 'otherDebts') totalOther += parseFloat(item.amount);
+                        if (typeKey === 'car') totalCar += parseFloat(item.amount);
+                    }
+                    let metaHTML = '';
+                    if (item.reason || item.debt_date || item.delay_reason) {
+                        metaHTML = `<div class="item-meta">`;
+                        if(item.reason) metaHTML += `السبب: ${item.reason} `;
+                        if(item.delay_reason) metaHTML += `<span style="color:red">تأخير: ${item.delay_reason}</span> `;
+                        if(item.debt_date && typeKey !== 'car') metaHTML += `| ${item.debt_date}`;
+                        metaHTML += `</div>`;
+                    }
+                    container.innerHTML += `<div class="list-item"><div class="item-right"><label class="checkbox-group ${item.is_paid ? 'completed-text' : ''}"><input type="checkbox" ${item.is_paid ? 'checked' : ''} onchange="toggleDebt('${typeKey}', ${item.id})"><div class="item-info"><span class="item-title">${item.name}</span>${metaHTML}</div></label></div><div class="item-left"><span class="item-amount ${item.is_paid ? 'completed-text' : ''}" style="${typeKey === 'toMe' ? 'color: #10B981;' : ''}">${item.amount} ﷼</span><div class="edit-element" style="gap:5px;"><button class="btn-edit" onclick="openModal('${typeKey}', ${item.id})">✏️</button><button class="btn-edit" style="color: #EF4444;" onclick="deleteItem('${typeKey}', ${item.id})">🗑️</button></div></div></div>`;
+                });
+            };
+            buildList('toMe', 'to-me-list'); buildList('otherDebts', 'other-debts-list'); buildList('car', 'car-list');
+            document.getElementById('total-to-me').textContent = totalToMe + " ﷼"; document.getElementById('total-other-debts').textContent = totalOther + " ﷼"; document.getElementById('total-car').textContent = totalCar + " ﷼"; document.getElementById('total-on-me').textContent = (totalOther + totalCar) + " ﷼";
+
+            const billsC = document.getElementById('fixed-bills-list'); billsC.innerHTML = '';
+            billsData.forEach(b => { billsC.innerHTML += `<div class="list-item"><span class="item-title">${b.name}</span><div class="item-left"><span class="item-amount" style="color: #EF4444;">${b.amount} ﷼</span><div class="edit-element" style="gap:5px;"><button class="btn-edit" onclick="openModal('bill', ${b.id})">✏️</button><button class="btn-edit" style="color: #EF4444;" onclick="deleteItem('bill', ${b.id})">🗑️</button></div></div></div>`; });
+
+            const expC = document.getElementById('expenses-list'); expC.innerHTML = '';
+            expensesData.forEach(e => { expC.innerHTML += `<div class="list-item"><div class="item-info"><span class="item-title">${e.name}</span><span class="item-meta">${e.expense_date}</span></div><div class="item-left"><span class="item-amount" style="color: #EF4444;">${e.amount} ﷼</span><div class="edit-element" style="gap:5px;"><button class="btn-edit" onclick="openModal('expense', ${e.id})">✏️</button><button class="btn-edit" style="color: #EF4444;" onclick="deleteItem('expense', ${e.id})">🗑️</button></div></div></div>`; });
+            
+            calculateBudget();
+        }
+
+        function calculateBudget() {
+            let totalSpent = 0; billsData.forEach(b => totalSpent += parseFloat(b.amount)); expensesData.forEach(e => totalSpent += parseFloat(e.amount));
+            debtsData.otherDebts.forEach(d => { if(d.is_paid) totalSpent += parseFloat(d.amount); });
+            debtsData.car.forEach(c => { if(c.is_paid) totalSpent += parseFloat(c.amount); });
+            let extraIncome = 0; debtsData.toMe.forEach(d => { if(d.is_paid) extraIncome += parseFloat(d.amount); });
+
+            const budget = parseFloat(document.getElementById('monthly-budget-input').value) || 0;
+            const remaining = (budget + extraIncome) - totalSpent;
+            document.getElementById('total-spent').textContent = totalSpent + " ﷼";
+            document.getElementById('total-remaining').textContent = remaining + " ﷼";
+            document.getElementById('remaining-card').style.background = remaining < 0 ? 'var(--grad-red)' : 'var(--grad-green)';
+        }
+
+        async function toggleDebt(type, id) { await apiCall('api.php', { action: 'toggle_paid', type: type, id: id }); fetchData(); }
+        async function deleteItem(type, id) { if(confirm("تأكيد الحذف؟")) { await apiCall('api.php', { action: 'delete_item', type: type, id: id }); fetchData(); } }
+
+        async function addStandardDebt() {
+            const type = document.getElementById('debt-type').value; const name = document.getElementById('debt-name').value;
+            const reason = document.getElementById('debt-reason').value; const amount = document.getElementById('debt-amount').value;
+            if(!name || !amount) return alert("أدخل الاسم والمبلغ");
+            await apiCall('api.php', { action: 'add_debt', type: type, name: name, reason: reason, amount: amount, date: new Date().toLocaleDateString('ar-SA') });
+            document.getElementById('debt-name').value = ''; document.getElementById('debt-reason').value = ''; document.getElementById('debt-amount').value = ''; fetchData();
+        }
+
+        async function addSingleCarInstallment() {
+            const amount = document.getElementById('car-single-amount').value; const singleMonth = document.getElementById('car-single-month').value; const reason = document.getElementById('car-single-reason').value;
+            if(!amount || !singleMonth) return alert("حدد الشهر والمبلغ");
+            const dateObj = new Date(singleMonth + "-01"); const name = `قسط شهر ${dateObj.toLocaleString('ar-SA', { month: 'long', year: 'numeric' })}`;
+            await apiCall('api.php', { action: 'add_debt', type: 'car', name: name, amount: amount, reason: reason, due_date: singleMonth });
+            document.getElementById('car-single-amount').value = ''; document.getElementById('car-single-month').value = ''; document.getElementById('car-single-reason').value = ''; fetchData();
+        }
+
+        async function generateCarPlan() {
+            const total = parseFloat(document.getElementById('auto-car-total').value); const monthly = parseFloat(document.getElementById('auto-car-monthly').value); const startMonth = document.getElementById('auto-car-start-month').value;
+            if (!total || !monthly || !startMonth) return alert("الرجاء تعبئة كل الحقول");
+            let cTotal = total; let cDate = new Date(startMonth + "-01"); let plan = [];
+            while (cTotal > 0) {
+                let inst = (cTotal < monthly) ? cTotal : monthly;
+                plan.push({ name: `قسط شهر ${cDate.toLocaleString('ar-SA', { month: 'long', year: 'numeric' })}`, amount: inst.toFixed(2), due_date: cDate.toISOString().slice(0, 7) });
+                cTotal -= inst; cDate.setMonth(cDate.getMonth() + 1);
+            }
+            await apiCall('api.php', { action: 'add_car_plan', plan: plan });
+            document.getElementById('auto-car-total').value = ''; document.getElementById('auto-car-monthly').value = ''; document.getElementById('auto-car-start-month').value = ''; fetchData(); alert("تم توليد الخطة!");
+        }
+
+        async function addExpense() {
+            const name = document.getElementById('expense-name').value; const amount = document.getElementById('expense-amount').value;
+            if (name && amount) { await apiCall('api.php', { action: 'add_expense', name: name, amount: amount, date: new Date().toLocaleString('ar-SA') });
+                document.getElementById('expense-name').value = ''; document.getElementById('expense-amount').value = ''; fetchData();
+            }
+        }
+
+        async function addFixedBill() {
+            const name = prompt("اسم الفاتورة:"); const amount = prompt("قيمة الفاتورة (أرقام فقط):");
+            if(name && amount) { await apiCall('api.php', { action: 'add_bill', name: name, amount: amount }); fetchData(); }
+        }
+
+        let cType = null; let cId = null;
+        function openModal(type, id) {
+            cType = type; cId = id; let item;
+            if (['toMe', 'otherDebts', 'car'].includes(type)) item = debtsData[type].find(i => i.id === id);
+            else if (type === 'bill') item = billsData.find(i => i.id === id); else if (type === 'expense') item = expensesData.find(i => i.id === id);
+
+            document.getElementById('modal-name').value = item.name; document.getElementById('modal-amount').value = item.amount;
+            const rGroup = document.getElementById('modal-reason-group'); const mGroup = document.getElementById('modal-month-group');
+            
+            if (['toMe', 'otherDebts', 'car'].includes(type)) { rGroup.style.display = 'flex'; document.getElementById('modal-reason').value = item.reason || item.delay_reason || ''; } else { rGroup.style.display = 'none'; }
+            if (type === 'car') { mGroup.style.display = 'flex'; document.getElementById('modal-dueDate').value = item.due_date || ''; } else { mGroup.style.display = 'none'; }
+            document.getElementById('editModal').classList.add('active');
+        }
+        function closeModal() { document.getElementById('editModal').classList.remove('active'); }
+        async function saveModalChanges() {
+            const name = document.getElementById('modal-name').value; const amount = document.getElementById('modal-amount').value; const reason = document.getElementById('modal-reason').value; const dueDate = document.getElementById('modal-dueDate').value;
+            let finalName = name;
+            if(cType === 'car' && dueDate) { const dObj = new Date(dueDate + "-01"); finalName = `قسط شهر ${dObj.toLocaleString('ar-SA', { month: 'long', year: 'numeric' })}`; }
+            await apiCall('api.php', { action: 'edit_item', type: cType, id: cId, name: finalName, amount: amount, reason: reason, due_date: dueDate });
+            closeModal(); fetchData();
+        }
+
+        async function checkMonthlyReset() {
+            const today = new Date(); const mKey = today.getMonth() + "-" + today.getFullYear();
+            const lastReset = localStorage.getItem('lastResetServer'); 
+            if (today.getDate() >= salaryDay && lastReset !== mKey) {
+                if (confirm("🎉 وصل يوم الراتب!\nتصفير المصروفات وإعادة الأقساط لحالة 'غير مدفوع'؟")) {
+                    await apiCall('api.php', { action: 'reset_month' });
+                    localStorage.setItem('lastResetServer', mKey); fetchData(); alert("تم تصفير الميزانية!");
+                }
+            }
+        }
+
+        function exportToExcel() {
+            let csv = "\uFEFFالنوع,الاسم,المبلغ (ريال),التاريخ/السبب,الحالة\n";
+            expensesData.forEach(e => csv += `مصروف,${e.name},${e.amount},${e.expense_date},مدفوع\n`);
+            debtsData.car.forEach(c => csv += `قسط سيارة,${c.name},${c.amount},${c.delay_reason||'--'},${c.is_paid?'مدفوع':'غير مدفوع'}\n`);
+            debtsData.otherDebts.forEach(d => csv += `علي,${d.name},${d.amount},${d.reason||'--'},${d.is_paid?'مدفوع':'غير مدفوع'}\n`);
+            debtsData.toMe.forEach(d => csv += `لي,${d.name},${d.amount},${d.reason||'--'},${d.is_paid?'مستلم':'غير مستلم'}\n`);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+            link.download = `تقرير_مالي.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
