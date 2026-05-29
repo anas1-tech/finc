@@ -1,14 +1,19 @@
 <?php
-// إعدادات قاعدة البيانات في الاستضافة
-$host = 'localhost'; // غالباً تبقى localhost في معظم الاستضافات
-$dbname = 'اسم_قاعدة_البيانات_هنا'; 
-$username = 'اسم_مستخدم_قاعدة_البيانات_هنا';
-$password = 'الرقم_السري_لقاعدة_البيانات';
+// إعدادات قاعدة بيانات Supabase (PostgreSQL)
+$host = 'db.scqkhbfezttqawsgvage.supabase.co';
+$port = '5432';
+$dbname = 'postgres';
+$username = 'postgres';
+$password = 'HdCgphSFvUpQCVhu';
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // استخدمنا pgsql بدلاً من mysql
+    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
+    $conn = new PDO($dsn, $username, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
 } catch(PDOException $e) {
-    die(json_encode(["status" => "error", "message" => "فشل الاتصال بقاعدة البيانات! يرجى التحقق من db.php"]));
+    die(json_encode(["status" => "error", "message" => "فشل الاتصال بـ Supabase: " . $e->getMessage()]));
 }
 ?>
